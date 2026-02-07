@@ -34,6 +34,7 @@ Item {
                         const containerImage = container.Image;
                         const containerState = container.State;
                         const containerStatus = container.Status;
+                        const containerProject = (container.Labels && container.Labels["com.docker.compose.project"]) || "";
                         const containerInfo = container;
                         containerModel.append({
                             "containerName": containerName,
@@ -41,6 +42,7 @@ Item {
                             "containerImage": containerImage,
                             "containerState": containerState,
                             "containerStatus": containerStatus,
+                            "containerProject": containerProject,
                             "containerInfo": JSON.stringify(containerInfo, null, 2)
                         });
                     });

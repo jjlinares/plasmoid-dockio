@@ -20,6 +20,8 @@ ColumnLayout{
     onStateFiltersChanged: stateFilterModel.invalidateFilter()
     property var imageFilters: []
     onImageFiltersChanged: imageFilterModel.invalidateFilter()
+    property var projectFilters: []
+    onProjectFiltersChanged: projectFilterModel.invalidateFilter()
 
     function uniqueImages() {
         let images = []
@@ -28,6 +30,19 @@ ColumnLayout{
             if (img && !images.includes(img)) images.push(img)
         }
         return images.sort()
+    }
+
+    function uniqueProjects() {
+        let projects = []
+        let hasStandalone = false
+        for (let i = 0; i < containerModel.count; i++) {
+            let p = containerModel.get(i).containerProject
+            if (!p) hasStandalone = true
+            else if (!projects.includes(p)) projects.push(p)
+        }
+        projects.sort()
+        if (hasStandalone) projects.unshift("")
+        return projects
     }
     property var actionsDialog: null
 
@@ -205,6 +220,64 @@ ColumnLayout{
                 }
             }
 
+            PlasmaComponents.ToolButton {
+                id: projectFilterButton
+                icon.name: "project-development"
+                display: QQC2.AbstractButton.IconOnly
+                checked: projectFilters.length > 0
+                visible: uniqueProjects().length > 1
+                onClicked: {
+                    projectFilterMenu.projectList = uniqueProjects()
+                    projectFilterMenu.open()
+                }
+
+                function toggleProject(proj) {
+                    let f = projectFilters.slice()
+                    let idx = f.indexOf(proj)
+                    if (idx >= 0) f.splice(idx, 1); else f.push(proj)
+                    let all = uniqueProjects()
+                    projectFilters = f.length === all.length ? [] : f
+                }
+
+                PlasmaComponents.ToolTip {
+                    text: projectFilters.length === 0 ? i18n("Filter by compose project") : i18n("Project: %1", projectFilters.map(p => p || "Standalone").join(", "))
+                }
+
+                PlasmaComponents.Menu {
+                    id: projectFilterMenu
+                    y: projectFilterButton.height
+                    closePolicy: QQC2.Popup.CloseOnPressOutside
+
+                    property var projectList: []
+
+                    PlasmaComponents.MenuItem {
+                        text: i18n("All")
+                        checkable: true
+                        checked: projectFilters.length === 0
+                        onClicked: projectFilters = []
+                    }
+
+                    PlasmaComponents.MenuItem {
+                        text: i18n("Standalone")
+                        checkable: true
+                        checked: projectFilters.includes("")
+                        onClicked: projectFilterButton.toggleProject("")
+                    }
+
+                    PlasmaComponents.MenuSeparator {}
+
+                    Repeater {
+                        model: projectFilterMenu.projectList.filter(p => p !== "")
+                        delegate: PlasmaComponents.MenuItem {
+                            text: modelData
+                            checkable: true
+                            checked: projectFilters.includes(modelData)
+                            onClicked: projectFilterButton.toggleProject(modelData)
+                        }
+                    }
+                }
+            }
+
             PlasmaExtras.SearchField {
                 id: filter
                 Layout.fillWidth: true
@@ -247,9 +320,20 @@ ColumnLayout{
         }
     }
 
+    KItemModels.KSortFilterProxyModel {
+        id: projectFilterModel
+        sourceModel: imageFilterModel
+        filterRoleName: "containerProject"
+        filterRowCallback: function(sourceRow, sourceParent) {
+            if (projectFilters.length === 0) return true
+            let value = sourceModel.data(sourceModel.index(sourceRow, 0, sourceParent), filterRole)
+            return projectFilters.includes(value)
+        }
+    }
+
     model: KItemModels.KSortFilterProxyModel {
         id: filterModel
-        sourceModel: imageFilterModel
+        sourceModel: projectFilterModel
         filterRoleName: "containerName"
         filterRegularExpression: RegExp(filter.text, "i")
         filterCaseSensitivity: Qt.CaseInsensitive
@@ -340,12 +424,12 @@ ColumnLayout{
                 anchors.centerIn: parent
                 visible: containerListView.count === 0
                 text: {
-                    if (filter.text !== "" || stateFilters.length > 0 || imageFilters.length > 0) return "No results.";
+                    if (filter.text !== "" || stateFilters.length > 0 || imageFilters.length > 0 || projectFilters.length > 0) return "No results.";
                     else if (error !== "") return "Some error occurred.";
                     else return "Start your docker!";
                     }
                 icon.name: {
-                    if (filter.text !== "" || stateFilters.length > 0 || imageFilters.length > 0) return Qt.resolvedUrl("icons/dockio-cube.svg");
+                    if (filter.text !== "" || stateFilters.length > 0 || imageFilters.length > 0 || projectFilters.length > 0) return Qt.resolvedUrl("icons/dockio-cube.svg");
                     else if (error !== "") return Qt.resolvedUrl("icons/dockio-error.svg");
                     else return Qt.resolvedUrl("icons/dockio-icon.svg");
                 }
