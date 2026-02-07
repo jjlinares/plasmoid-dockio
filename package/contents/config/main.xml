@@ -17,7 +17,11 @@
 
 	<group name="Appearance">
 		<entry name="showProgressBar" 				 type="Bool"><default>false</default></entry>
-		<entry name="moveDeleteButton"     			 type="Bool"><default>true</default></entry>
+		<entry name="moveStartStopButton"  			 type="Bool"><default>false</default></entry>
+		<entry name="moveRestartButton"    			 type="Bool"><default>false</default></entry>
+		<entry name="moveLogsButton"       			 type="Bool"><default>false</default></entry>
+		<entry name="moveExecButton"       			 type="Bool"><default>false</default></entry>
+		<entry name="moveDeleteButton"     			 type="Bool"><default>false</default></entry>
 		<entry name="showStatusBar"     			 type="Bool"><default>false</default></entry>
 	</group>
 </kcfg>

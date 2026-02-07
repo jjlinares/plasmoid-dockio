@@ -13,8 +13,46 @@ PlasmaComponents.Menu {
 
     property string containerId: ""
     property string containerName: ""
+    property string containerState: ""
 
     signal closeContextMenu
+
+    PlasmaComponents.MenuItem {
+        visible: cfg.moveStartStopButton
+        height: visible ? undefined : 0
+        text: ["running", "removing", "restarting", "created"].includes(containerState) ? i18n("Stop") : i18n("Start")
+        icon.name: ["running", "removing", "restarting", "created"].includes(containerState) ? Qt.resolvedUrl("../icons/dockio-stop.svg") : Qt.resolvedUrl("../icons/dockio-start.svg")
+        onTriggered: {
+            var socketPath = "$([ -S \"$HOME/.docker/desktop/docker.sock\" ] && echo \"$HOME/.docker/desktop/docker.sock\" || echo /var/run/docker.sock)";
+            if (["running", "removing", "restarting", "created"].includes(containerState)) {
+                dockerCommand.executable.exec("curl -s --unix-socket " + socketPath + " --write-out 'Response:%{http_code}' -X POST http://localhost/containers/" + containerId + "/stop");
+            } else {
+                dockerCommand.executable.exec("curl -s --unix-socket " + socketPath + " --write-out 'Response:%{http_code}' -X POST http://localhost/containers/" + containerId + "/start");
+            }
+        }
+        onHoveredChanged: {
+            if (!hovered) highlighted = false;
+        }
+    }
+
+    PlasmaComponents.MenuItem {
+        visible: cfg.moveRestartButton
+        height: visible ? undefined : 0
+        text: i18n("Restart")
+        icon.name: Qt.resolvedUrl("../icons/dockio-refresh.svg")
+        onTriggered: {
+            var socketPath = "$([ -S \"$HOME/.docker/desktop/docker.sock\" ] && echo \"$HOME/.docker/desktop/docker.sock\" || echo /var/run/docker.sock)";
+            dockerCommand.executable.exec("curl -s --unix-socket " + socketPath + " --write-out 'Response:%{http_code}' -X POST http://localhost/containers/" + containerId + "/restart");
+        }
+        onHoveredChanged: {
+            if (!hovered) highlighted = false;
+        }
+    }
+
+    PlasmaComponents.MenuSeparator {
+        visible: cfg.moveStartStopButton || cfg.moveRestartButton
+        height: visible ? undefined : 0
+    }
 
     PlasmaComponents.Menu {
         id: execMenu
@@ -29,9 +67,7 @@ PlasmaComponents.Menu {
                 dockerCommand.executable.exec(cfg.terminalCommand + ` $SHELL -c "docker exec -it ${containerId} ash"`);
             }
             onHoveredChanged: {
-                if (!hovered) {
-                    highlighted = false;
-                }
+                if (!hovered) highlighted = false;
             }
         }
 
@@ -41,9 +77,7 @@ PlasmaComponents.Menu {
                 dockerCommand.executable.exec(cfg.terminalCommand + ` $SHELL -c "docker exec -it ${containerId} bash"`);
             }
             onHoveredChanged: {
-                if (!hovered) {
-                    highlighted = false;
-                }
+                if (!hovered) highlighted = false;
             }
         }
 
@@ -53,9 +87,7 @@ PlasmaComponents.Menu {
                 dockerCommand.executable.exec(cfg.terminalCommand + ` $SHELL -c "docker exec -it ${containerId} dash"`);
             }
             onHoveredChanged: {
-                if (!hovered) {
-                    highlighted = false;
-                }
+                if (!hovered) highlighted = false;
             }
         }
 
@@ -65,9 +97,7 @@ PlasmaComponents.Menu {
                 dockerCommand.executable.exec(cfg.terminalCommand + ` $SHELL -c "docker exec -it ${containerId} sh"`);
             }
             onHoveredChanged: {
-                if (!hovered) {
-                    highlighted = false;
-                }
+                if (!hovered) highlighted = false;
             }
         }
     }
@@ -81,9 +111,7 @@ PlasmaComponents.Menu {
             dockerCommand.executable.exec(cfg.terminalCommand + ` $SHELL -c "docker logs -f ${containerId}"`);
         }
         onHoveredChanged: {
-            if (!hovered) {
-                highlighted = false;
-            }
+            if (!hovered) highlighted = false;
         }
     }
 
@@ -101,9 +129,7 @@ PlasmaComponents.Menu {
             containerListPage.createActionsDialog(containerId, containerName, "delete");
         }
         onHoveredChanged: {
-            if (!hovered) {
-                highlighted = false;
-            }
+            if (!hovered) highlighted = false;
         }
     }
 

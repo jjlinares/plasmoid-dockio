@@ -32,6 +32,7 @@ PlasmaComponents.ItemDelegate {
             contextMenuButton.checked = true;
             contextMenu.containerId = containerId;
             contextMenu.containerName = containerName;
+            contextMenu.containerState = containerState;
             contextMenu.open();
             if (contextMenu !== null) {
                 contextMenu.closeContextMenu.connect(destroyContextMenu);
@@ -163,7 +164,7 @@ PlasmaComponents.ItemDelegate {
 
             PlasmaComponents.ToolButton {
                 id: actionToolButton
-                visible: !cfg.debug
+                visible: !cfg.debug && !cfg.moveStartStopButton
                 text: ["running", "removing", "restarting", "created"].includes(containerState) ? i18n("Stop") : i18n("Start")
                 icon.name: ["running", "removing", "restarting", "created"].includes(containerState) ? Qt.resolvedUrl("icons/dockio-stop.svg") : Qt.resolvedUrl("icons/dockio-start.svg")
                 onClicked: {
@@ -180,9 +181,32 @@ PlasmaComponents.ItemDelegate {
 
             PlasmaComponents.ToolButton  {
                 id: restartToolButton
+                visible: !cfg.moveRestartButton
                 text: i18n("Restart")
                 icon.name: Qt.resolvedUrl("icons/dockio-refresh.svg")
                 onClicked: Utils.commands["restartContainer"].run(containerId, containerName);
+
+                PlasmaComponents.ToolTip{ text: parent.text }
+                display:QQC2.AbstractButton.IconOnly
+            }
+
+            PlasmaComponents.ToolButton {
+                id: logsToolButton
+                visible: !cfg.moveLogsButton
+                text: i18n("Logs")
+                icon.name: Qt.resolvedUrl("icons/dockio-logs.svg")
+                onClicked: dockerCommand.executable.exec(cfg.terminalCommand + ` $SHELL -c "docker logs -f ${containerId}"`);
+
+                PlasmaComponents.ToolTip{ text: parent.text }
+                display:QQC2.AbstractButton.IconOnly
+            }
+
+            PlasmaComponents.ToolButton {
+                id: execToolButton
+                visible: !cfg.moveExecButton
+                text: i18n("Exec")
+                icon.name: Qt.resolvedUrl("icons/dockio-term.svg")
+                onClicked: dockerCommand.executable.exec(cfg.terminalCommand + ` $SHELL -c "docker exec -it ${containerId} sh"`);
 
                 PlasmaComponents.ToolTip{ text: parent.text }
                 display:QQC2.AbstractButton.IconOnly
