@@ -1,5 +1,11 @@
 # Plasmoid Dockio Development
 
+**Always use Context7** to verify assumptions or learn about KDE Plasma development:
+```
+context7 library: /websites/develop_kde
+```
+Query this before making claims about QML, Plasma APIs, or widget behavior.
+
 ## Dev Cycle
 
 ```bash

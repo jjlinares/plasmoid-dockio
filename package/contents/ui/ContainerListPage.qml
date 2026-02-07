@@ -16,6 +16,8 @@ ColumnLayout{
     property alias model: containerListView.model
     property string sortBy: "ContainerName"
     property bool ascending: true
+    property string stateFilter: "all"
+    onStateFilterChanged: stateFilterModel.invalidateFilter()
     property var actionsDialog: null
 
     function createActionsDialog(containerId, containerName, action) {
@@ -85,6 +87,43 @@ ColumnLayout{
                 }
             }
 
+            PlasmaComponents.ToolButton {
+                id: stateFilterButton
+                icon.name: "view-filter"
+                display: QQC2.AbstractButton.IconOnly
+                checked: stateFilter !== "all"
+                onClicked: stateFilterMenu.open()
+
+                PlasmaComponents.ToolTip {
+                    text: stateFilter === "all" ? i18n("Filter by state") : i18n("Filter: %1", stateFilter)
+                }
+
+                PlasmaComponents.Menu {
+                    id: stateFilterMenu
+                    y: stateFilterButton.height
+                    closePolicy: QQC2.Popup.CloseOnPressOutside
+
+                    PlasmaComponents.MenuItem {
+                        text: i18n("All")
+                        checkable: true
+                        checked: stateFilter === "all"
+                        onClicked: stateFilter = "all"
+                    }
+                    PlasmaComponents.MenuItem {
+                        text: i18n("Running")
+                        checkable: true
+                        checked: stateFilter === "running"
+                        onClicked: stateFilter = "running"
+                    }
+                    PlasmaComponents.MenuItem {
+                        text: i18n("Exited")
+                        checkable: true
+                        checked: stateFilter === "exited"
+                        onClicked: stateFilter = "exited"
+                    }
+                }
+            }
+
             PlasmaExtras.SearchField {
                 id: filter
                 Layout.fillWidth: true
@@ -105,9 +144,20 @@ ColumnLayout{
         }
     }
 
+    KItemModels.KSortFilterProxyModel {
+        id: stateFilterModel
+        sourceModel: containerModel
+        filterRoleName: "containerState"
+        filterRowCallback: function(sourceRow, sourceParent) {
+            if (stateFilter === "all") return true
+            let value = sourceModel.data(sourceModel.index(sourceRow, 0, sourceParent), filterRole)
+            return value === stateFilter
+        }
+    }
+
     model: KItemModels.KSortFilterProxyModel {
         id: filterModel
-        sourceModel: containerModel
+        sourceModel: stateFilterModel
         filterRoleName: "containerName"
         filterRegularExpression: RegExp(filter.text, "i")
         filterCaseSensitivity: Qt.CaseInsensitive
@@ -198,12 +248,12 @@ ColumnLayout{
                 anchors.centerIn: parent
                 visible: containerListView.count === 0
                 text: {
-                    if (filter.text !== "") return "No results.";
+                    if (filter.text !== "" || stateFilter !== "all") return "No results.";
                     else if (error !== "") return "Some error occurred.";
                     else return "Start your docker!";
                     }
                 icon.name: {
-                    if (filter.text !== "") return Qt.resolvedUrl("icons/dockio-cube.svg");
+                    if (filter.text !== "" || stateFilter !== "all") return Qt.resolvedUrl("icons/dockio-cube.svg");
                     else if (error !== "") return Qt.resolvedUrl("icons/dockio-error.svg");
                     else return Qt.resolvedUrl("icons/dockio-icon.svg");
                 }
