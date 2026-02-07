@@ -16,8 +16,8 @@ ColumnLayout{
     property alias model: containerListView.model
     property string sortBy: "ContainerName"
     property bool ascending: true
-    property string stateFilter: "all"
-    onStateFilterChanged: stateFilterModel.invalidateFilter()
+    property var stateFilters: []
+    onStateFiltersChanged: stateFilterModel.invalidateFilter()
     property var actionsDialog: null
 
     function createActionsDialog(containerId, containerName, action) {
@@ -91,11 +91,19 @@ ColumnLayout{
                 id: stateFilterButton
                 icon.name: "view-filter"
                 display: QQC2.AbstractButton.IconOnly
-                checked: stateFilter !== "all"
+                checked: stateFilters.length > 0
                 onClicked: stateFilterMenu.open()
 
+                readonly property var allStates: ["running", "exited", "paused", "restarting"]
+                function toggleState(state) {
+                    let f = stateFilters.slice()
+                    let idx = f.indexOf(state)
+                    if (idx >= 0) f.splice(idx, 1); else f.push(state)
+                    stateFilters = f.length === allStates.length ? [] : f
+                }
+
                 PlasmaComponents.ToolTip {
-                    text: stateFilter === "all" ? i18n("Filter by state") : i18n("Filter: %1", stateFilter)
+                    text: stateFilters.length === 0 ? i18n("Filter by state") : i18n("Filter: %1", stateFilters.join(", "))
                 }
 
                 PlasmaComponents.Menu {
@@ -106,20 +114,32 @@ ColumnLayout{
                     PlasmaComponents.MenuItem {
                         text: i18n("All")
                         checkable: true
-                        checked: stateFilter === "all"
-                        onClicked: stateFilter = "all"
+                        checked: stateFilters.length === 0
+                        onClicked: stateFilters = []
                     }
                     PlasmaComponents.MenuItem {
                         text: i18n("Running")
                         checkable: true
-                        checked: stateFilter === "running"
-                        onClicked: stateFilter = "running"
+                        checked: stateFilters.includes("running")
+                        onClicked: stateFilterButton.toggleState("running")
                     }
                     PlasmaComponents.MenuItem {
                         text: i18n("Exited")
                         checkable: true
-                        checked: stateFilter === "exited"
-                        onClicked: stateFilter = "exited"
+                        checked: stateFilters.includes("exited")
+                        onClicked: stateFilterButton.toggleState("exited")
+                    }
+                    PlasmaComponents.MenuItem {
+                        text: i18n("Paused")
+                        checkable: true
+                        checked: stateFilters.includes("paused")
+                        onClicked: stateFilterButton.toggleState("paused")
+                    }
+                    PlasmaComponents.MenuItem {
+                        text: i18n("Restarting")
+                        checkable: true
+                        checked: stateFilters.includes("restarting")
+                        onClicked: stateFilterButton.toggleState("restarting")
                     }
                 }
             }
@@ -149,9 +169,9 @@ ColumnLayout{
         sourceModel: containerModel
         filterRoleName: "containerState"
         filterRowCallback: function(sourceRow, sourceParent) {
-            if (stateFilter === "all") return true
+            if (stateFilters.length === 0) return true
             let value = sourceModel.data(sourceModel.index(sourceRow, 0, sourceParent), filterRole)
-            return value === stateFilter
+            return stateFilters.includes(value)
         }
     }
 
@@ -248,12 +268,12 @@ ColumnLayout{
                 anchors.centerIn: parent
                 visible: containerListView.count === 0
                 text: {
-                    if (filter.text !== "" || stateFilter !== "all") return "No results.";
+                    if (filter.text !== "" || stateFilters.length > 0) return "No results.";
                     else if (error !== "") return "Some error occurred.";
                     else return "Start your docker!";
                     }
                 icon.name: {
-                    if (filter.text !== "" || stateFilter !== "all") return Qt.resolvedUrl("icons/dockio-cube.svg");
+                    if (filter.text !== "" || stateFilters.length > 0) return Qt.resolvedUrl("icons/dockio-cube.svg");
                     else if (error !== "") return Qt.resolvedUrl("icons/dockio-error.svg");
                     else return Qt.resolvedUrl("icons/dockio-icon.svg");
                 }
