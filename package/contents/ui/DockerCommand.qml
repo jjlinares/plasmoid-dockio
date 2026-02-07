@@ -1,5 +1,6 @@
 import QtQuick
 import org.kde.plasma.plasma5support as Plasma5Support
+import "../Utils.js" as Utils
 
 Item {
     id: dockerCommand
@@ -58,8 +59,10 @@ Item {
         }
 
         function get() {
-            var getContainers = "curl --unix-socket /var/run/docker.sock http://localhost/containers/json?all=true";
-            var getInfo = "curl --unix-socket /var/run/docker.sock http://localhost/info";
+            var socketPath = "$([ -S \"$HOME/.docker/desktop/docker.sock\" ] && echo \"$HOME/.docker/desktop/docker.sock\" || echo /var/run/docker.sock)";
+            var getContainers = "curl --unix-socket " + socketPath + " 'http://localhost/containers/json?all=true'";
+            var getInfo = "curl --unix-socket " + socketPath + " 'http://localhost/info'";
+            if (cfg.debug) console.log("Get containers cmd:", getContainers);
             connectSource(getContainers);
             connectSource(getInfo);
         }

@@ -42,14 +42,27 @@ function invokeDelayTimerCallback(callback) {
 }
 
 class Command {
-    constructor(cmd, txt, callback) {
-        this.cmd = cmd;
+    constructor(cmdTemplate, txt, callback) {
+        this.cmdTemplate = cmdTemplate;
         this.txt = txt;
         this.callback = callback;
     }
 
+    buildCommand(arg = null) {
+        let cmd = this.cmdTemplate;
+        // Replace socket path placeholder with command substitution to find socket
+        if (cmd.includes("${DOCKER_SOCKET}")) {
+            const socketPath = "$([ -S \"$HOME/.docker/desktop/docker.sock\" ] && echo \"$HOME/.docker/desktop/docker.sock\" || echo /var/run/docker.sock)";
+            cmd = cmd.replace(/\$\{DOCKER_SOCKET\}/g, socketPath);
+        }
+        if (arg !== null) {
+            cmd = cmd.replace("{}", arg);
+        }
+        return cmd;
+    }
+
     run(...args) {
-        const newCmd = this.cmd.replace("{}", args[0]);
+        const newCmd = this.buildCommand(args[0]);
         if (cfg.debug) console.log(`New Command: ${newCmd}`);
         this.exec(newCmd, ...args);
     }
@@ -69,28 +82,28 @@ class Command {
 }
 
 let commands = {
-    statDocker: new Command("curl -s --unix-socket /var/run/docker.sock --write-out 'Response:%{http_code}' -X GET http://localhost/containers/json",
+    statDocker: new Command("curl -s --unix-socket ${DOCKER_SOCKET} --write-out 'Response:%{http_code}' -X GET http://localhost/containers/json",
         "stat-docker", statDockerCallback
     ),
-    startDocker: new Command("systemctl start docker.service docker.socket && curl -s --unix-socket /var/run/docker.sock --write-out 'Response:%{http_code}' -X GET http://localhost/containers/json",
+    startDocker: new Command("systemctl start docker.service docker.socket && curl -s --unix-socket ${DOCKER_SOCKET} --write-out 'Response:%{http_code}' -X GET http://localhost/containers/json",
         "start-docker", initDocker
     ),
-    stopDocker: new Command("systemctl stop docker.service docker.socket && curl -s --unix-socket /var/run/docker.sock --write-out 'Response:%{http_code}' -X GET http://localhost/containers/json",
+    stopDocker: new Command("systemctl stop docker.service docker.socket && curl -s --unix-socket ${DOCKER_SOCKET} --write-out 'Response:%{http_code}' -X GET http://localhost/containers/json",
         "stop-docker", initDocker
     ),
-    startContainer: new Command("curl -s --unix-socket /var/run/docker.sock --write-out 'Response:%{http_code}' -X POST http://localhost/containers/{}/start",
+    startContainer: new Command("curl -s --unix-socket ${DOCKER_SOCKET} --write-out 'Response:%{http_code}' -X POST http://localhost/containers/{}/start",
         "start-container", startContainerCallback
     ),
-    stopContainer: new Command("curl -s --unix-socket /var/run/docker.sock --write-out 'Response:%{http_code}' -X POST http://localhost/containers/{}/stop",
+    stopContainer: new Command("curl -s --unix-socket ${DOCKER_SOCKET} --write-out 'Response:%{http_code}' -X POST http://localhost/containers/{}/stop",
         "stop-container", stopContainerCallback
     ),
-    restartContainer: new Command("curl -s --unix-socket /var/run/docker.sock --write-out 'Response:%{http_code}' -X POST http://localhost/containers/{}/restart",
+    restartContainer: new Command("curl -s --unix-socket ${DOCKER_SOCKET} --write-out 'Response:%{http_code}' -X POST http://localhost/containers/{}/restart",
         "restart-container", restartContainerCallback
     ),
-    deleteContainer: new Command("curl -s --unix-socket /var/run/docker.sock --write-out 'Response:%{http_code}' -X DELETE http://localhost/containers/{}",
+    deleteContainer: new Command("curl -s --unix-socket ${DOCKER_SOCKET} --write-out 'Response:%{http_code}' -X DELETE http://localhost/containers/{}",
         "delete-container", deleteContainerCallback
     ),
-    inspectContainer: new Command("curl -s --unix-socket /var/run/docker.sock --write-out 'Response:%{http_code}' -X GET http://localhost/containers/{}/json",
+    inspectContainer: new Command("curl -s --unix-socket ${DOCKER_SOCKET} --write-out 'Response:%{http_code}' -X GET http://localhost/containers/{}/json",
         "inspect-container", inspectContainerCallback
     ),
 };

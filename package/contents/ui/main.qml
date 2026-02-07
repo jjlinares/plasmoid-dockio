@@ -33,8 +33,9 @@ PlasmoidItem {
     toolTipSubText: statusMessage
     Component.onCompleted: () => {
         Utils.notificationInstall();
+        timer.start();
         if (cfg.fetchOnStart) {
-        startupTimer.start();
+            startupTimer.start();
         }
     }
 
