@@ -18,6 +18,17 @@ ColumnLayout{
     property bool ascending: true
     property var stateFilters: []
     onStateFiltersChanged: stateFilterModel.invalidateFilter()
+    property var imageFilters: []
+    onImageFiltersChanged: imageFilterModel.invalidateFilter()
+
+    function uniqueImages() {
+        let images = []
+        for (let i = 0; i < containerModel.count; i++) {
+            let img = containerModel.get(i).containerImage
+            if (img && !images.includes(img)) images.push(img)
+        }
+        return images.sort()
+    }
     property var actionsDialog: null
 
     function createActionsDialog(containerId, containerName, action) {
@@ -144,6 +155,56 @@ ColumnLayout{
                 }
             }
 
+            PlasmaComponents.ToolButton {
+                id: imageFilterButton
+                icon.name: "container"
+                display: QQC2.AbstractButton.IconOnly
+                checked: imageFilters.length > 0
+                onClicked: {
+                    imageFilterMenu.imageList = uniqueImages()
+                    imageFilterMenu.open()
+                }
+
+                function toggleImage(img) {
+                    let f = imageFilters.slice()
+                    let idx = f.indexOf(img)
+                    if (idx >= 0) f.splice(idx, 1); else f.push(img)
+                    let all = uniqueImages()
+                    imageFilters = f.length === all.length ? [] : f
+                }
+
+                PlasmaComponents.ToolTip {
+                    text: imageFilters.length === 0 ? i18n("Filter by image") : i18n("Image: %1", imageFilters.join(", "))
+                }
+
+                PlasmaComponents.Menu {
+                    id: imageFilterMenu
+                    y: imageFilterButton.height
+                    closePolicy: QQC2.Popup.CloseOnPressOutside
+
+                    property var imageList: []
+
+                    PlasmaComponents.MenuItem {
+                        text: i18n("All")
+                        checkable: true
+                        checked: imageFilters.length === 0
+                        onClicked: imageFilters = []
+                    }
+
+                    PlasmaComponents.MenuSeparator {}
+
+                    Repeater {
+                        model: imageFilterMenu.imageList
+                        delegate: PlasmaComponents.MenuItem {
+                            text: modelData
+                            checkable: true
+                            checked: imageFilters.includes(modelData)
+                            onClicked: imageFilterButton.toggleImage(modelData)
+                        }
+                    }
+                }
+            }
+
             PlasmaExtras.SearchField {
                 id: filter
                 Layout.fillWidth: true
@@ -175,9 +236,20 @@ ColumnLayout{
         }
     }
 
+    KItemModels.KSortFilterProxyModel {
+        id: imageFilterModel
+        sourceModel: stateFilterModel
+        filterRoleName: "containerImage"
+        filterRowCallback: function(sourceRow, sourceParent) {
+            if (imageFilters.length === 0) return true
+            let value = sourceModel.data(sourceModel.index(sourceRow, 0, sourceParent), filterRole)
+            return imageFilters.includes(value)
+        }
+    }
+
     model: KItemModels.KSortFilterProxyModel {
         id: filterModel
-        sourceModel: stateFilterModel
+        sourceModel: imageFilterModel
         filterRoleName: "containerName"
         filterRegularExpression: RegExp(filter.text, "i")
         filterCaseSensitivity: Qt.CaseInsensitive
@@ -268,12 +340,12 @@ ColumnLayout{
                 anchors.centerIn: parent
                 visible: containerListView.count === 0
                 text: {
-                    if (filter.text !== "" || stateFilters.length > 0) return "No results.";
+                    if (filter.text !== "" || stateFilters.length > 0 || imageFilters.length > 0) return "No results.";
                     else if (error !== "") return "Some error occurred.";
                     else return "Start your docker!";
                     }
                 icon.name: {
-                    if (filter.text !== "" || stateFilters.length > 0) return Qt.resolvedUrl("icons/dockio-cube.svg");
+                    if (filter.text !== "" || stateFilters.length > 0 || imageFilters.length > 0) return Qt.resolvedUrl("icons/dockio-cube.svg");
                     else if (error !== "") return Qt.resolvedUrl("icons/dockio-error.svg");
                     else return Qt.resolvedUrl("icons/dockio-icon.svg");
                 }
