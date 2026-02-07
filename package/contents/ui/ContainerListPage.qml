@@ -115,7 +115,7 @@ ColumnLayout{
 
             PlasmaComponents.ToolButton {
                 id: stateFilterButton
-                icon.name: "view-filter"
+                icon.name: "flag"
                 display: QQC2.AbstractButton.IconOnly
                 checked: stateFilters.length > 0
                 onClicked: stateFilterMenu.open()
@@ -172,7 +172,7 @@ ColumnLayout{
 
             PlasmaComponents.ToolButton {
                 id: imageFilterButton
-                icon.name: "container"
+                icon.name: "filename-title-amarok"
                 display: QQC2.AbstractButton.IconOnly
                 checked: imageFilters.length > 0
                 onClicked: {
@@ -222,7 +222,7 @@ ColumnLayout{
 
             PlasmaComponents.ToolButton {
                 id: projectFilterButton
-                icon.name: "project-development"
+                icon.name: "object-group"
                 display: QQC2.AbstractButton.IconOnly
                 checked: projectFilters.length > 0
                 visible: uniqueProjects().length > 1
