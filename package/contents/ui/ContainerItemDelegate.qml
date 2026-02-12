@@ -195,7 +195,7 @@ PlasmaComponents.ItemDelegate {
                 visible: !cfg.moveLogsButton
                 text: i18n("Logs")
                 icon.name: Qt.resolvedUrl("icons/dockio-logs.svg")
-                onClicked: dockerCommand.executable.exec(cfg.terminalCommand + ` $SHELL -c "docker logs -f ${containerId}"`);
+                onClicked: dockerCommand.executable.exec(cfg.terminalCommand + ` $SHELL -c "docker logs -f ${containerId}; echo; exec $SHELL"`);
 
                 PlasmaComponents.ToolTip{ text: parent.text }
                 display:QQC2.AbstractButton.IconOnly

@@ -108,7 +108,7 @@ PlasmaComponents.Menu {
         text: i18n("Logs")
         icon.name: Qt.resolvedUrl("../icons/dockio-logs.svg")
         onTriggered: {
-            dockerCommand.executable.exec(cfg.terminalCommand + ` $SHELL -c "docker logs -f ${containerId}"`);
+            dockerCommand.executable.exec(cfg.terminalCommand + ` $SHELL -c "docker logs -f ${containerId}; echo; exec $SHELL"`);
         }
         onHoveredChanged: {
             if (!hovered) highlighted = false;
